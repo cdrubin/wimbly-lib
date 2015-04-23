@@ -31,7 +31,7 @@ function wimbly.preprocess( path, replacements, options )
 
   local lfs = require "lfs"
 
-  local confs = wimbly.find( path, '%.conf%.source$' )
+  local confs = wimbly.find( path, '%.template$' )
 
   if ngx then ngx.log( ngx.DEBUG, 'wimbly preprocessing...' ) end
 
@@ -50,7 +50,7 @@ function wimbly.preprocess( path, replacements, options )
     end
 
     -- write changes
-    local f = io.open( source:gsub( '.source$', '' ), 'w' )
+    local f = io.open( source:gsub( '.template$', '' ), 'w' )
 
     if f then
       f:write( conf )
