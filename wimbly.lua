@@ -35,30 +35,37 @@ end
 function wimbly.preprocess( path, replacements, options )
   local options = ( options or {} )
 
-  local confs = wimbly.find( path, '%.template$' )
+  local confs = wimbly.find( path, '%.template$', { recurse = true } )
 
-  if ngx then ngx.log( ngx.DEBUG, 'wimbly preprocessing...' ) end
+  if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), 'wimbly preprocessing .template files in '..path..':' ) end
 
   for _, source in ipairs( confs ) do
+
+    if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), '  '..source ) end
+
     -- load contents
     local f = io.open( source, 'r' )
-    local conf_source = f:read( '*all' )
+    local text_source = f:read( '*all' )
     f:close()
 
-    local conf = conf_source:interpolate( replacements ) --original, replacement )
+    local text_processed = text_source:interpolate( replacements ) --original, replacement )
 
-    if replacements['/'] then
-      local pattern = '(location)%s+([%^~=]-%s-)(^?)/'
-      local prefixed = '%1 %2%3'..replacements['/']
-      conf = conf:gsub( pattern, prefixed )
-    end
+    --if replacements['/'] then
+    --      local pattern = '(location)%s+([%^~=]-%s-)(^?)/'
+    --  local prefixed = '%1 %2%3'..replacements['/']
+    -- conf = conf:gsub( pattern, prefixed )
+    --end
+
+    local processed = source:gsub( '.template$', '' )
 
     -- write changes
-    local f = io.open( source:gsub( '.template$', '' ), 'w' )
+    local f = io.open( processed, 'w' )
 
     if f then
-      f:write( conf )
+      --if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), '\n'..text_processed.."\n" ) end
+      f:write( text_processed )
       f:close()
+      if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), '  --> '..processed.."\n" ) end
     end
 
   end
