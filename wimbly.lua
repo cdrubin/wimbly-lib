@@ -1,23 +1,29 @@
 local wimbly = {}
 
-function wimbly.find( path, filter )
+function wimbly.find( path, filter, options )
+  local options = ( options or { recurse = false } )
+
   local filter = filter or '.*'
+
+  local lfs = require "lfs"
 
   local directories, results = {}, {}
   for item in lfs.dir( path ) do
 
     local attr = lfs.attributes( path..'/'..item )
 
-    if attr.mode == "directory" and not ( item == '.' or item == '..' ) then
-      table.insert( directories, item )
-    elseif attr.mode == 'file' and item:match( filter ) then
-      table.insert( results, path..'/'..item )
+    if attr ~= nil then
+      if attr.mode == "directory" and not ( item == '.' or item == '..' ) then
+        table.insert( directories, item )
+      elseif attr.mode == 'file' and item:match( filter ) then
+        table.insert( results, path..'/'..item )
+      end
     end
   end
 
-  if #directories > 0 then
+  if #directories > 0 and options.recurse then
     for _, subdirectory in ipairs( directories ) do
-      local subresults = wimbly.find( path..'/'..subdirectory, filter )
+      local subresults = wimbly.find( path..'/'..subdirectory, filter, options )
       for _, subitem in ipairs( subresults ) do table.insert( results, subitem ) end
     end
   end
@@ -28,8 +34,6 @@ end
 
 function wimbly.preprocess( path, replacements, options )
   local options = ( options or {} )
-
-  local lfs = require "lfs"
 
   local confs = wimbly.find( path, '%.template$' )
 
