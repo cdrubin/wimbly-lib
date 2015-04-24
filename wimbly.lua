@@ -317,12 +317,12 @@ function wimbly._debug_location_conf( file, location, conf, linenumberoffset )
 end
 
 
-function wimbly.debug( path )
+function wimbly.debug( path, pattern )
   local options = ( options or {} )
 
   local lfs = require "lfs"
 
-  local confs = wimbly.find( path, 'urls%.conf$' )
+  local confs = wimbly.find( path, pattern, { recurse = true } )
 
   if ngx then ngx.log( ngx.DEBUG, 'wimbly debug rewriting...' ) end
 
