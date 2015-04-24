@@ -8,14 +8,14 @@
 		another_function()
 		coroutine.resume( some_coroutine )
 		ProFi:stop()
-		ProFi:writeReport( 'MyProfilingReport.txt' )
+		ProFi:report( 'MyProfilingReport.txt' )
 
 	API:
 	*Arguments are specified as: type/name/default.
 		ProFi:start( string/once/nil )
 		ProFi:stop()
 		ProFi:checkMemory( number/interval/0, string/note/'' )
-		ProFi:writeReport( string/filename/'ProFi.txt' )
+		ProFi:report( string/filename/'ProFi.txt' )
 		ProFi:reset()
 		ProFi:setHookCount( number/hookCount/0 )
 		ProFi:setGetTimeMethod( function/getTimeMethod/os.clock )
