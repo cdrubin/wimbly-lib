@@ -41,11 +41,11 @@ function wimbly.preprocess( path, replacements, options )
 
   local confs = wimbly.find( path, '%.template$', { depth = 3 } )
 
-  if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), 'wimbly preprocessing .template files in '..path..':' ) end
+  --if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), 'wimbly preprocessing .template files in '..path..':' ) end
 
   for _, source in ipairs( confs ) do
 
-    if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), '  '..source ) end
+    --if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), '  '..source ) end
 
     -- load contents
     local f = io.open( source, 'r' )
@@ -69,7 +69,7 @@ function wimbly.preprocess( path, replacements, options )
       --if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), '\n'..text_processed.."\n" ) end
       f:write( text_processed )
       f:close()
-      if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), '  --> '..processed.."\n" ) end
+      --if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), '  --> '..processed.."\n" ) end
     end
 
   end
@@ -328,7 +328,7 @@ function wimbly.debug( path, pattern )
 
   local confs = wimbly.find( path, pattern, { depth = 3 } )
 
-  if ngx then ngx.log( ngx.DEBUG, 'wimbly debug rewriting...' ) end
+  --if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), 'wimbly debug rewriting...' ) end
 
   for _, source in ipairs( confs ) do
     -- load contents
