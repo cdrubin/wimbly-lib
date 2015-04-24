@@ -1,9 +1,11 @@
 local wimbly = {}
 
-function wimbly.find( path, filter, options )
-  local options = ( options or { recurse = false } )
+function wimbly.find( path, filter, options, level )
 
   local filter = filter or '.*'
+  local options = options or {}
+  options.depth = options.depth or 0
+  local level = level or 0
 
   local lfs = require "lfs"
 
@@ -21,12 +23,14 @@ function wimbly.find( path, filter, options )
     end
   end
 
-  if #directories > 0 and options.recurse then
+  if #directories > 0 and options.depth > level then
     for _, subdirectory in ipairs( directories ) do
-      local subresults = wimbly.find( path..'/'..subdirectory, filter, options )
+      local subresults = wimbly.find( path..'/'..subdirectory, filter, options, level + 1 )
       for _, subitem in ipairs( subresults ) do table.insert( results, subitem ) end
     end
   end
+
+  --ngx.log( ngx.ERR, path..'\n'..inspect( results ) )
 
   return results
 end
@@ -35,7 +39,7 @@ end
 function wimbly.preprocess( path, replacements, options )
   local options = ( options or {} )
 
-  local confs = wimbly.find( path, '%.template$', { recurse = true } )
+  local confs = wimbly.find( path, '%.template$', { depth = 3 } )
 
   if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), 'wimbly preprocessing .template files in '..path..':' ) end
 
@@ -322,7 +326,7 @@ function wimbly.debug( path, pattern )
 
   local lfs = require "lfs"
 
-  local confs = wimbly.find( path, pattern, { recurse = true } )
+  local confs = wimbly.find( path, pattern, { depth = 3 } )
 
   if ngx then ngx.log( ngx.DEBUG, 'wimbly debug rewriting...' ) end
 
