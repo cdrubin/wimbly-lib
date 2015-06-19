@@ -33,28 +33,6 @@ function RESTfully.respond( content, ngx_status )
   return ngx.exit( ngx.OK )
 end
 
---[[
-function RESTfully.validate( parameters_mapping )
-
-  local params = {}
-  for name, mapping in pairs( parameters_mapping ) do
-    params[name] = mapping.location
-  end
-
-  local success, errors, cleaned = validate.parameters( params, parameters_mapping )
-  if not success then
-    return restfully.respond( errors, ngx.HTTP_BAD_REQUEST )
-    --restfully.json( errors )
-    --return ngx.exit( ngx.OK )
-  end
-
-  return cleaned
-
-end
---]]
-
--- XXX:
--- TODO: keep same or similar validate function but add restfully.arguments function that
 
 function RESTfully.arguments( options )
   local options = ( options or { uri = true, post = true } )
@@ -74,7 +52,7 @@ end
 
 -- accept values table and mapping or a combined single table
 function RESTfully.validate( values_and_mapping, options )
-  local options = ( options or { coerce_types = true } )
+  local options = ( options or { continue_on_errors = false } )
 
   local values = {}
   for name, map in pairs( values_and_mapping ) do
@@ -83,10 +61,10 @@ function RESTfully.validate( values_and_mapping, options )
 
   local success, errors = validate.for_creation( values, values_and_mapping )
 
-  if not success then
+  if not success and not continue_on_errors then
     return restfully.respond( errors, ngx.HTTP_BAD_REQUEST )
   else
-    return values
+    return values, errors
   end
 end
 
@@ -178,43 +156,6 @@ function RESTfully.GET.metadata( model_path )
   RESTfully.json( results )
 
 end
-
---[[
-
-function RESTfully.POST.create( model_path )
-
-  local BusinessModel = require( model_path )
-  local model_name = RESTfully._generate_human_readable_model_name( model_path )
-
-  -- must read the request body up front
-  ngx.req.read_body()
-  local posted = ngx.req.get_post_args()
-
-  local valid, errors, cleaned = validate.for_creation( posted, BusinessModel.fieldMapping )
-
-  local results = {}
-  local model = nil
-
-  if not valid then
-    ngx.status = ngx.HTTP_BAD_REQUEST
-    results.message = 'submitted '..model_name..' values are invalid'
-    results.errors = errors
-  else
-    model = BusinessModel:insert( cleaned )
-    if not model then
-      ngx.status = ngx.HTTP_BAD_REQUEST
-      results.message = model_name..' creation failed'
-    else
-      results.message = model_name..' created successfully'
-      results.details = model:data()
-    end
-  end
-
-  RESTfully.json( results )
-  return model
-
-end
---]]
 
 
 function RESTfully.POST.create( model_path )
@@ -373,8 +314,6 @@ end
 
 function RESTfully._posted_name_to_value( name, value, posted )
 
-  --ngx.say( '<hr />name: ', name, ', value: ', value )
-
   if name:match( '%[' ) then
 
     -- if needed wrap first element in square parentheses for uniformity
@@ -453,11 +392,6 @@ function RESTfully.post_args_to_table( posted, mapping )
 end
 RESTfully.uri_args_to_table = RESTfully.post_args_to_table
 
---function RESTfully.uri_args_to_table( gotten, mapping )
---  return RESTfully.post_args_to_table( gotten, mapping )
---end
-
-
 
 function RESTfully.POST.data( model_path, loader, load_parameter )
 
@@ -476,11 +410,7 @@ function RESTfully.POST.data( model_path, loader, load_parameter )
   if object then
     -- must read the request body up front
     ngx.req.read_body()
-    --ngx.say( inspect( ngx.req.get_post_args() ) )
-    -- coerce types to resemble fieldMapping as closely as possible
     local posted = RESTfully.post_args_to_table( ngx.req.get_post_args(), Model.fieldMapping )
-
-    --ngx.say( inspect( posted ) )
 
     local valid, errors = validate.for_update( posted, Model.fieldMapping, { zero_based_indexing = true } )
 
@@ -491,10 +421,6 @@ function RESTfully.POST.data( model_path, loader, load_parameter )
     else
       object:set( posted )
       results.message = model_name..' updated successfully'
-
-      --ngx.say( '\n\n'..tostring( business_object:get( 'active' ) )..'\n\n' )
-      --ngx.say( '\n\n'..inspect( business_object )..'\n\n' )
-
 
       -- reload from database to verify changes and force cache flush
       results.data = Model[loader]( Model, ngx.unescape_uri( parameter ), { reload = true } ):data()
@@ -507,49 +433,5 @@ function RESTfully.POST.data( model_path, loader, load_parameter )
   RESTfully.json( results )
 
 end
-
-
---[==[
-function RESTfully.POST.data( model_path, loader, load_parameter )
-
-  local BusinessModel = require( model_path )
-  local model_name = RESTfully._generate_human_readable_model_name( model_path )
-
-  local results = {}
-
-  local business_object
-  local parameter = ngx.var['arg_'..load_parameter ]
-
-  if parameter ~= nil then
-    business_object = BusinessModel[loader]( BusinessModel, ngx.unescape_uri( parameter ) )
-  end
-
-  if business_object then
-    -- must read the request body up front
-    ngx.req.read_body()
-    local posted = ngx.req.get_post_args()
-
-    local valid, errors, cleaned = validate.for_update( posted, BusinessModel.fieldMapping )
-
-    if not valid then
-      ngx.status = ngx.HTTP_BAD_REQUEST
-      results.message = 'submitted '..model_name..' values are invalid'
-      results.errors = errors
-    else
-      business_object:set( cleaned )
-      results.message = model_name..' updated successfully'
-
-      -- reload from database to verify changes and force cache flush
-      results.data = BusinessModel[loader]( BusinessModel, ngx.unescape_uri( parameter ), { reload = true } ):data()
-    end
-  else
-    ngx.status = ngx.HTTP_BAD_REQUEST
-    results.message = model_name..' not found'
-  end
-
-  RESTfully.json( results )
-
-end
---]==]
 
 return RESTfully
