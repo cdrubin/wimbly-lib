@@ -61,7 +61,7 @@ function RESTfully.validate( values_and_mapping, options )
 
   local success, errors = validate.for_creation( values, values_and_mapping )
 
-  if not success and not continue_on_errors then
+  if not success and not options.continue_on_errors then
     return restfully.respond( errors, ngx.HTTP_BAD_REQUEST )
   else
     return values, errors
