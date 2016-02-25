@@ -39,7 +39,7 @@ end
 function wimbly.preprocess( path, replacements, options )
   local options = ( options or {} )
 
-  local confs = wimbly.find( path, 'endpoints%.nginx%.template$', { depth = 3 } )
+  local confs = wimbly.find( path, '%.nginx%.template$', { depth = 3 } )
 
   --if ngx and bit then ngx.log( bit.band( ngx.DEBUG, ngx.ERR ), 'wimbly preprocessing .template files in '..path..':' ) end
 
