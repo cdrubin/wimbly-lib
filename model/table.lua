@@ -19,6 +19,7 @@ local TableModel = class( 'TableModel', TablesModel )
 -- </pre>
 -- @class table
 -- @name TableModel.static.tableName
+TableModel.static.idColumn = 'id'
 TableModel.static.tableName = nil
 
 
@@ -35,8 +36,8 @@ SELECT
 FROM
   %(tablename)s
 WHERE
-  id = %(id)s
-]], { tablename = self.tableName, id = id } )
+  %(columnname)s = %(id)s
+]], { tablename = self.tableName, columnname = self.idColumn, id = id } )
 
   local row = object.db:result( query )
 
