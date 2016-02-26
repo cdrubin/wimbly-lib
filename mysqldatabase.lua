@@ -8,9 +8,9 @@ function MySQLDatabase.static:connect( host, database, username, password )
   local object = MySQLDatabase:new()
 
   object.host = host or '127.0.0.1'
-  object.database = database or 'rwproject'
-  object.username = username or 'lua'
-  local password = password or 'M0n4ay'
+  object.database = database
+  object.username = username
+  local password = password
 
   if not ngx.ctx.mysql then
     ngx.ctx.mysql = {}
