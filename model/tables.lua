@@ -11,6 +11,7 @@ module 'model/_tables'
 local BaseModel = require( 'model/base' )
 local TablesModel = class( 'TablesModel', BaseModel )
 
+TablesModel.static.connectionSettings = {}
 
 --- Derived classes provide the names of the database tables for the data rows that back the object.
 -- <br />
@@ -32,7 +33,8 @@ TablesModel.static.query = {}
 -- Initializes data structures for storage of row data and tracking of updates to that data
 function TablesModel:initialize()
   BaseModel.initialize( self )
-  self.db = require( 'lib/mysqldatabase' ):connect( 'back.readingandwritingproject.com' )
+
+  self.db = require( 'mysqldatabase' ):connect( self.class.static.connectionSettings )
   self.rows = {}
   self.updated = {}
 end

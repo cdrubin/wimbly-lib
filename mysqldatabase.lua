@@ -3,14 +3,14 @@
 local MySQLDatabase = class( 'MySQLDatabase' )--, Model )
 
 
-function MySQLDatabase.static:connect( host, database, username, password )
+function MySQLDatabase.static:connect( connection_settings )
 
   local object = MySQLDatabase:new()
 
-  object.host = host or '127.0.0.1'
-  object.database = database
-  object.username = username
-  local password = password
+  object.host = connection_settings.host
+  object.database = connection_settings.database
+  object.username = connection_settings.username
+  local password = connection_settings.password
 
   if not ngx.ctx.mysql then
     ngx.ctx.mysql = {}
@@ -31,8 +31,7 @@ function MySQLDatabase.static:connect( host, database, username, password )
     }
 
     if not ok then
-      ngx.say("failed to connect: ", err, ": ", errno, " ", sqlstate)
-      return
+	  error( 'failed to connect: ' .. err .. ': ' .. (errno or '') .. ' ' .. (sqlstate or '') )
     end
 
     ngx.ctx.mysql[ object.host..object.database..object.username ] = db
@@ -50,8 +49,7 @@ function MySQLDatabase:query( sql_statement )
 
   local db = ngx.ctx.mysql[ self.host..self.database..self.username ]
   if not db then
-    ngx.say( "failed to access object's db connection" )
-    return
+	error( 'failed to access object\'s db connection' )
   end
 
   local res, err, errorcode, sqlstate = db:query( sql_statement )
