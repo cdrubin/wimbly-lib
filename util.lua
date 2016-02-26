@@ -38,7 +38,7 @@ function string.interpolate( s, tab )
     return tab[k] and ("%"..fmt):format( tab[k] ) or '%('..k..')'..fmt
   end
 
-  return ( s:gsub( '%%%((%a%w*)%)([-0-9%.]*[cdeEfgGiouxXsq])', _format ) )
+  return ( s:gsub( '%%%((%a[%w_]*)%)([-0-9%.]*[cdeEfgGiouxXsq])', _format ) )
 end
 
 -- padright
