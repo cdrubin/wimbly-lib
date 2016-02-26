@@ -8,7 +8,7 @@
 module 'model/_tables'
 --]]
 
-local BaseModel = require( 'model/_base' )
+local BaseModel = require( 'model/base' )
 local TablesModel = class( 'TablesModel', BaseModel )
 
 

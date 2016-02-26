@@ -8,7 +8,7 @@
 module 'model/_table'
 --]]
 
-local TablesModel = require( 'model/_tables' )
+local TablesModel = require( 'model/tables' )
 local TableModel = class( 'TableModel', TablesModel )
 
 
@@ -23,9 +23,9 @@ TableModel.static.tableName = nil
 
 
 -- default implementation assumes database table has a primary key 'id'
-function TableModel.static:fromID( id ) 
+function TableModel.static:fromID( id )
   local id = tonumber( id )
-  
+
   local object = self:new()
 
   -- load the data for this table object
@@ -53,7 +53,7 @@ function TableModel:_insert()
   else
     error( err )
   end
-    
+
 end
 
 
@@ -70,13 +70,13 @@ function TableModel:_delete()
   local database_table = self.class.tableName
   if table.dotget( self, 'rows.id' ) then
     local result, err, errcode, sqlstate = self.db:delete( database_table, table.dotget( self, 'rows.id' ) )
-    
+
     if result and result.affected_rows == 1 then
       self = nil
     else
       error( err )
     end
-    
+
   else
     error( 'default implementation relies on id field in object data', 2 )
   end
