@@ -193,7 +193,7 @@ function wimbly.wrap( content, file, location, linenumber, options )
     res = xpcall( func, callback )
 
     message = result.message
-    --ngx.say( '======', message, '======' )
+
   else
     res, message = false, message
     errortype = 'compile'
@@ -213,14 +213,16 @@ function wimbly.wrap( content, file, location, linenumber, options )
     end
 
     local offset, error_message
-    --ngx.say( inspect( result ) )
+
     if type( message ) == 'string' then
       offset, error_message = message:match( '%]:(%d+): (.*)$' )
       if not error_message then
         error_message = inspect( message )
       end
-    --elseif type( message ) == 'table' then
-      --error_message = inspect( message )
+    elseif type( message ) == 'table' then
+	  -- passed a table by exception
+	  error_message = '[not used]'
+	  options.override_message = table.concat( message, "\n\n" )
     else
       result.callstack = {}
       options.hide_extract = true

@@ -55,7 +55,8 @@ function MySQLDatabase:query( sql_statement )
   local res, err, errorcode, sqlstate = db:query( sql_statement )
 
   if err then
-	error( err .. ' "' .. sql_statement .. '"' ) --inspect( { err = err, errorcode = errorcode, sqlstate = sqlstate, query = sql_statement } )  )
+	--error( err .. ' "' .. sql_statement .. '"' ) --inspect( { err = err, errorcode = errorcode, sqlstate = sqlstate, query = sql_statement } )  )
+	error( { err, sql_statement } )
   end
 
   return res, err, errorcode, sqlstate
