@@ -36,6 +36,15 @@ function wimbly.find( path, filter, options, level )
 end
 
 
+function wimbly.dd( something )
+
+  ngx.header.content_type = 'text/plain'
+  ngx.say( inspect( something ) )
+  ngx.exit( ngx.OK )
+
+end
+
+
 function wimbly.preprocess( path, replacements, options )
   local options = ( options or {} )
 

@@ -42,6 +42,53 @@ function MySQLDatabase.static:connect( connection_settings )
 end
 
 
+function MySQLDatabase:prepared_query( sql_statement, substitutions )
+
+  -- convert all ?[name] values into '?' for a valid SQL prepared statement,
+  local clean_sql_statement
+  --local substitution_matches =
+
+  wimbly.dd( sql_statement )
+
+  for named_substitution in sql_statement:gmatch( ':([%w_]-)' ) do
+	ngx.say( '-' .. named_substitution .. '-' )
+  end
+
+  wimbly.dd()
+
+  local insertion_points = {}
+  for name, _ in pairs( substitutions ) do
+    insertion_points[name] = '?'
+  end
+
+  --wimbly.dd( insertion_points )
+
+  local prepare_statement = string.interpolate( sql_statement, insertion_points )
+
+  --wimbly.dd( prepare_statement )
+
+  self:query( "PREPARE ps1 FROM '" .. prepare_statement .. "'" )
+  -- ordered in the same way as the occurrence of substitutions
+
+  -- save prepared statedment in local store of ones that have been sent
+  -- send prepared statement
+
+  --[[
+	mysql> PREPARE stmt1 FROM 'SELECT SQRT(POW(?,2) + POW(?,2)) AS hypotenuse';
+	mysql> SET @a = 3;
+	mysql> SET @b = 4;
+	mysql> EXECUTE stmt1 USING @a, @b;
+  --]]
+
+  -- send sets
+
+
+
+
+
+end
+
+
 function MySQLDatabase:query( sql_statement )
 
   ngx.log( ngx.DEBUG, "\n"..sql_statement )
