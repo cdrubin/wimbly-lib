@@ -3,6 +3,9 @@ class = require 'middleclass'
 
 local SQL = class( 'SQL' )
 
+function SQL:__tostring()
+  -- call statement or vice-versa
+end
 
 SQL.verb = ''
 SQL.columns = {}
