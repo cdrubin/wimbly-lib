@@ -22,12 +22,31 @@ function SQL.static:select( columns )
 end
 
 
+function SQL.static:validate_and_transform_name( name )
+  if name:match( '[^%w_]+' ) then
+    error( 'names may contain alphanumeric characters with underscores' )
+  end
+end
+
+
 function SQL:select( columns )
 
   for alias, name in pairs( columns ) do
     --print( '-n-' .. type( name ) )
 	--print( '+a+' .. type( alias ) )
-	if type( alias ) == 'number' then alias = name end
+
+	if name:match( '[^%w_]+' ) then
+      error( 'names may contain alphanumeric characters with underscores' )
+	end
+
+	if type( alias ) == 'number' then
+	  alias = name
+	else
+	  if alias:match( '[^%w_]+' ) then
+	    error( 'aliases may contain alphanumberic characters and underscores' )
+	  end
+	end
+
 	self.columns[alias] = name
   end
 
@@ -75,8 +94,8 @@ end
 --return SQL
 query = SQL
   :select( {
-    ['u_id'] = 'id',
-    ['u_firstname'] = 'firstname',
+    ['id'] = 'u_id',
+    ['firstname'] = 'u_firstname',
     ['u_lastname'] = 'lastname'
   } )
   :from( {
