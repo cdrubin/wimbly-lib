@@ -11,14 +11,16 @@ end
 SQL.verb = ''
 SQL.columns = {}
 SQL.tables = {}
+SQL.conditions = {}
+
 
 function SQL:initialize( verb )
   self.verb = verb
 end
 
 
-function SQL.static:select( columns )
-  return SQL:new( 'select' ):select( columns )
+function SQL.static:SELECT( columns )
+  return SQL:new( 'select' ):SELECT( columns )
 end
 
 
@@ -29,7 +31,7 @@ function SQL.static:validate_and_transform_name( name )
 end
 
 
-function SQL:select( columns )
+function SQL:SELECT( columns )
 
   for alias, name in pairs( columns ) do
     --print( '-n-' .. type( name ) )
@@ -54,7 +56,7 @@ function SQL:select( columns )
 end
 
 
-function SQL:from( tables )
+function SQL:FROM( tables )
 
   for alias, name in pairs( tables ) do
     if type( alias ) == 'number' then alias = name end
@@ -62,6 +64,36 @@ function SQL:from( tables )
   end
 
   return self
+
+end
+
+
+function SQL:WHERE( conditions )
+
+  for _, clause in ipairs( conditions ) do
+    name, relation, value = unpack( clause )
+
+	if name:match( '[^%w_%.]+' ) then
+      error( 'names may contain alphanumeric characters with underscores' )
+	end
+
+	if relation:match( '[^<>=]+' ) then
+      error( "relations may be '<', '>', '='" )
+	end
+
+	if type( value ) == 'string' then
+	  -- 'escape' quotes in value
+	  value = value:gsub( "'", "''" )
+	  value = "'" .. value .. "'"
+	end
+
+	print( name )
+	print( relation )
+	print( value )
+
+	table.insert( self.conditions, { name, relation, value } )
+
+  end
 
 end
 
@@ -87,20 +119,41 @@ function SQL:statement()
 	end
   end
 
+  statement = statement .. "\nWHERE"
+
+  print( '-22' )
+
+
+  for _, condition in ipairs( self.conditions ) do
+    name, relation, value = unpack( condition )
+
+	print( '-====' )
+	print( name )
+	print( relation )
+	print( value )
+
+	statement = statement .. "\n  " .. name .. relation .. value .. ','
+  end
+
   return statement
 end
 
 
 --return SQL
 query = SQL
-  :select( {
+  :SELECT {
     ['id'] = 'u_id',
     ['firstname'] = 'u_firstname',
-    ['u_lastname'] = 'lastname'
-  } )
-  :from( {
-    ['user'] = 'u', 'person'
-  } )
+    ['lastname'] = 'u_lastname',
+	'u_email'
+  }
+  :FROM {
+    ['u'] = 'user',
+	'person'
+  }
+  :WHERE {
+	{ 'u.id', '=', 12 }
+  }
 
 print( query )
 

@@ -48,11 +48,20 @@ function MySQLDatabase:prepared_query( sql_statement, substitutions )
   local clean_sql_statement
   --local substitution_matches =
 
-  wimbly.dd( sql_statement )
+  -- find all the :names and verify that they appear after WHERE in the statement?
 
+
+  --wimbly.dd( sql_statement )
+
+  --[[
   for named_substitution in sql_statement:gmatch( ':([%w_]-)' ) do
 	ngx.say( '-' .. named_substitution .. '-' )
   end
+  --]]
+
+
+  --local it = [[ Hey there ]]
+  --it:gsub( ' ', '_' )
 
   wimbly.dd()
 
