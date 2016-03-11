@@ -69,9 +69,16 @@ end
 
 
 function SQL:WHERE( conditions ) return SQL:AND_WHERE( conditions ) end
+function SQL:AND( conditions ) return SQL:AND_WHERE( conditions ) end
 function SQL:AND_WHERE( conditions )
 
   for _, clause in ipairs( conditions ) do
+
+    if #clause == 1 and type( clause[1] ) == 'string' then
+	  table.insert( self.conditions, { clause[1] } )
+	  goto continue
+	end
+
     name, relation, value = unpack( clause )
 
 	if name:match( '[^%w_%.]+' ) then
@@ -90,16 +97,25 @@ function SQL:AND_WHERE( conditions )
 
 	table.insert( self.conditions, { name, relation, value } )
 
+	::continue::
   end
 
   return self
 
 end
 
-
+function SQL:OR( conditions ) return SQL:OR_WHERE( conditions ) end
 function SQL:OR_WHERE( conditions )
+  return ''
+end
+
+function SQL:IN( name, values )
+  return self
+end
 
 
+function SQL:NOT_IN( name, values )
+  return self
 end
 
 
@@ -131,7 +147,7 @@ function SQL:statement()
   for _, condition in ipairs( self.conditions ) do
     name, relation, value = unpack( condition )
 
-	statement = statement .. "\n  " .. name .. ' ' .. relation .. ' ' .. value
+	statement = statement .. "\n  " .. name .. ' ' .. relation .. ' ' .. value .. 'AND'
   end
 
   return statement
