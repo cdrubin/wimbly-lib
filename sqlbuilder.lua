@@ -26,7 +26,7 @@ end
 
 function SQL.static:validate_and_transform_name( name )
   if name:match( '[^%w_]+' ) then
-    error( 'names may contain alphanumeric characters with underscores' )
+    error( "name may contain alphanumeric characters with underscores. '" .. name .. "' invalid." )
   end
 end
 
@@ -38,14 +38,14 @@ function SQL:SELECT( columns )
 	--print( '+a+' .. type( alias ) )
 
 	if name:match( '[^%w_]+' ) then
-      error( 'names may contain alphanumeric characters with underscores' )
+      error( "name may contain alphanumeric characters with underscores. '" .. name .. "' invalid." )
 	end
 
 	if type( alias ) == 'number' then
 	  alias = name
 	else
 	  if alias:match( '[^%w_]+' ) then
-	    error( 'aliases may contain alphanumberic characters and underscores' )
+        error( "alias may contain alphanumeric characters with underscores. '" .. alias .. "' invalid." )
 	  end
 	end
 
@@ -68,17 +68,18 @@ function SQL:FROM( tables )
 end
 
 
-function SQL:WHERE( conditions )
+function SQL:WHERE( conditions ) return SQL:AND_WHERE( conditions ) end
+function SQL:AND_WHERE( conditions )
 
   for _, clause in ipairs( conditions ) do
     name, relation, value = unpack( clause )
 
 	if name:match( '[^%w_%.]+' ) then
-      error( 'names may contain alphanumeric characters with underscores' )
+      error( "name may contain alphanumeric characters with underscores. '" .. name .. "' invalid." )
 	end
 
 	if relation:match( '[^<>=]+' ) then
-      error( "relations may be '<', '>', '='" )
+      error( "relation may be '<', '>', '='. '" .. relation .. "' invalid." )
 	end
 
 	if type( value ) == 'string' then
@@ -87,13 +88,17 @@ function SQL:WHERE( conditions )
 	  value = "'" .. value .. "'"
 	end
 
-	print( name )
-	print( relation )
-	print( value )
-
 	table.insert( self.conditions, { name, relation, value } )
 
   end
+
+  return self
+
+end
+
+
+function SQL:OR_WHERE( conditions )
+
 
 end
 
@@ -109,7 +114,8 @@ function SQL:statement()
 	end
   end
 
-  statement = statement .. "\nFROM"
+  statement = statement:sub( 1, -2 ) .. "\nFROM"
+
 
   for alias, name in pairs( self.tables ) do
     if alias ~= name then
@@ -119,20 +125,13 @@ function SQL:statement()
 	end
   end
 
-  statement = statement .. "\nWHERE"
-
-  print( '-22' )
+  statement = statement:sub( 1, -2 ) .. "\nWHERE"
 
 
   for _, condition in ipairs( self.conditions ) do
     name, relation, value = unpack( condition )
 
-	print( '-====' )
-	print( name )
-	print( relation )
-	print( value )
-
-	statement = statement .. "\n  " .. name .. relation .. value .. ','
+	statement = statement .. "\n  " .. name .. ' ' .. relation .. ' ' .. value
   end
 
   return statement
@@ -152,7 +151,18 @@ query = SQL
 	'person'
   }
   :WHERE {
-	{ 'u.id', '=', 12 }
+	{ 'u.id', '=', 12 },
+	SQL:OR {
+	  { '1', '=', 1 },
+	  { '2', '=', 2 }
+	},
+	SQL:IN {
+	  'email', { 1, 2, 3, 4, 5 }
+	},
+	SQL:NOT_IN {
+	  'email', { 7, 8 }
+	},
+	{ 'lastname', '>=', "Davidson's" }
   }
 
 print( query )
