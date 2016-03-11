@@ -74,11 +74,6 @@ function SQL:AND_WHERE( conditions )
 
   for _, clause in ipairs( conditions ) do
 
-    if #clause == 1 and type( clause[1] ) == 'string' then
-	  table.insert( self.conditions, { clause[1] } )
-	  goto continue
-	end
-
     name, relation, value = unpack( clause )
 
 	if name:match( '[^%w_%.]+' ) then
@@ -97,7 +92,6 @@ function SQL:AND_WHERE( conditions )
 
 	table.insert( self.conditions, { name, relation, value } )
 
-	::continue::
   end
 
   return self
@@ -106,7 +100,7 @@ end
 
 function SQL:OR( conditions ) return SQL:OR_WHERE( conditions ) end
 function SQL:OR_WHERE( conditions )
-  return ''
+  return self
 end
 
 function SQL:IN( name, values )
@@ -168,17 +162,20 @@ query = SQL
   }
   :WHERE {
 	{ 'u.id', '=', 12 },
-	SQL:OR {
-	  { '1', '=', 1 },
-	  { '2', '=', 2 }
-	},
-	SQL:IN {
-	  'email', { 1, 2, 3, 4, 5 }
-	},
-	SQL:NOT_IN {
-	  'email', { 7, 8 }
-	},
 	{ 'lastname', '>=', "Davidson's" }
+  }
+  :OR {
+	{ '1', '=', 1 },
+	{ '2', '=', 2 }
+  }
+  :AND {
+    { 'firstname', '=', 'Daniel' }
+  }
+  :IN {
+	'email', { 1, 2, 3, 4, 5 }
+  }
+  :NOT_IN {
+	'email', { 7, 8 }
   }
 
 print( query )
