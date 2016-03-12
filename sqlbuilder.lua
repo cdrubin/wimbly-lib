@@ -68,8 +68,8 @@ function SQL:FROM( tables )
 end
 
 
-function SQL:WHERE( conditions ) return SQL:AND_WHERE( conditions ) end
-function SQL:AND( conditions ) return SQL:AND_WHERE( conditions ) end
+function SQL:WHERE( conditions ) return SQL.AND_WHERE( self, conditions ) end
+function SQL:AND( conditions ) return SQL.AND_WHERE( self, conditions ) end
 function SQL:AND_WHERE( conditions )
 
   for _, clause in ipairs( conditions ) do
@@ -98,8 +98,11 @@ function SQL:AND_WHERE( conditions )
 
 end
 
-function SQL:OR( conditions ) return SQL:OR_WHERE( conditions ) end
+function SQL:OR( conditions ) return SQL.OR_WHERE( self, conditions ) end
 function SQL:OR_WHERE( conditions )
+
+
+
   return self
 end
 
@@ -141,10 +144,10 @@ function SQL:statement()
   for _, condition in ipairs( self.conditions ) do
     name, relation, value = unpack( condition )
 
-	statement = statement .. "\n  " .. name .. ' ' .. relation .. ' ' .. value .. 'AND'
+	statement = statement .. "\n  " .. name .. ' ' .. relation .. ' ' .. value .. ' AND'
   end
 
-  return statement
+  return statement:sub( 1, -4 )
 end
 
 
@@ -177,7 +180,7 @@ query = SQL
   :NOT_IN {
 	'email', { 7, 8 }
   }
-
+  --]]
 print( query )
 
 -- return SQL
