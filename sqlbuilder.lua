@@ -74,25 +74,34 @@ function SQL:AND_WHERE( conditions )
 
   for _, clause in ipairs( conditions ) do
 
-    name, relation, value = unpack( clause )
+    if type( clause ) == 'table' then
 
-	if name:match( '[^%w_%.]+' ) then
-      error( "name may contain alphanumeric characters with underscores. '" .. name .. "' invalid." )
+      name, relation, value = unpack( clause )
+
+      if name:match( '[^%w_%.]+' ) then
+        error( "name may contain alphanumeric characters with underscores. '" .. name .. "' invalid." )
+	  end
+
+      if relation:match( '[^<>=]+' ) then
+        error( "relation may be '<', '>', '='. '" .. relation .. "' invalid." )
+      end
+
+      if type( value ) == 'string' then
+        -- 'escape' quotes in value
+        value = value:gsub( "'", "''" )
+        value = "'" .. value .. "'"
+      end
+
+	  table.insert( self.conditions, { name .. ' ' .. relation .. ' ' .. value, 'AND' } )
+
+	elseif type( clause ) == 'string' then
+
+	  table.insert( self.conditions, { clause, 'AND' } )
+
 	end
-
-	if relation:match( '[^<>=]+' ) then
-      error( "relation may be '<', '>', '='. '" .. relation .. "' invalid." )
-	end
-
-	if type( value ) == 'string' then
-	  -- 'escape' quotes in value
-	  value = value:gsub( "'", "''" )
-	  value = "'" .. value .. "'"
-	end
-
-	table.insert( self.conditions, { name, relation, value } )
 
   end
+
 
   return self
 
@@ -103,7 +112,7 @@ function SQL:OR_WHERE( conditions )
 
 
 
-  return self
+  return ''
 end
 
 function SQL:IN( name, values )
@@ -163,16 +172,13 @@ query = SQL
     ['u'] = 'user',
 	'person'
   }
-  :WHERE {
+  :WHERE{
 	{ 'u.id', '=', 12 },
-	{ 'lastname', '>=', "Davidson's" }
-  }
-  :OR {
-	{ '1', '=', 1 },
-	{ '2', '=', 2 }
-  }
-  :AND {
-    { 'firstname', '=', 'Daniel' }
+	{ 'lastname', '>=', "Davidson's" },
+	SQL:OR{
+  	  { '1', '=', 1 },
+	  { '2', '=', 2 }
+	}
   }
   :IN {
 	'email', { 1, 2, 3, 4, 5 }
