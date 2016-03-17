@@ -173,9 +173,16 @@ query = SQL
 	'person'
   }
   :WHERE{
+    AND = true,   -- <=== default
 	{ 'u.id', '=', 12 },
 	{ 'lastname', '>=', "Davidson's" },
-	SQL:OR{
+	{
+	  OR = true,  -- <=== override
+  	  { '1', '=', 1 },
+	  { '2', '=', 2 }
+	},
+	{
+	  OR = true,
   	  { '1', '=', 1 },
 	  { '2', '=', 2 }
 	}
