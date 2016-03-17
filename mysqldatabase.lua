@@ -44,33 +44,32 @@ end
 
 function MySQLDatabase:query2( sql_statement, substitutions )
 
-  -- valid substitution types:
+  -- additional substitution types:
   --   %(variable_name)Q - auto single-quote string with internal single-quotes doubled
   --   %(variable_name)t - convert to 'YYYY-MM-DD HH:MM:SS' format
   --   %(variable_name)n - validate as identifier
 
-
-  --function string.interpolate( s, tab )
-    --local _format = function(k, fmt)
-      --return tab[k] and ("%"..fmt):format( tab[k] ) or '%('..k..')'..fmt
-    --end
-
-    --return ( s:gsub( '%%%((%a[%w_]*)%)([-0-9%.]*[cdeEfgGiouxXsq])', _format ) )
-  --end
-
+  -- invalid substitution types:
+  --   %(variable_name)s - plain string substitutions are ripe for SQL-injection
+  --   %(variable_name)q - this context does not lend itself to requiring auto double-quoting of strings
 
   local _format = function( key, fmt )
 
 	local value = substitutions[ key ]
 
     if fmt == 'Q' then
+	  if type( value ) ~= 'string' then
+        error( "input:2: bad argument #2 to 'format' (string expected, got " .. type( value ) .. ")" )
+	  end
+
 	  value = value:gsub( "'", "''" )
 	  value = "'" .. value .. "'"
 	  substitutions[ key ] = value
 	  fmt = 's'
+
 	elseif fmt == 'n' then
-      if value:match( '[^%w_%.]+' ) then
-        error( "input:2: bad argument #2 to 'format' (identifier expected, got " .. type( value ) .. ")" )
+      if type( value ) ~= 'string' or value:match( '[^%w_%.]+' ) then
+        error( "input:2: bad argument #2 to 'format' (valid SQL identifier expected, got " .. type( value ) .. ")" )
 	  end
       fmt = 's'
 	elseif fmt == 't' then
@@ -81,21 +80,59 @@ function MySQLDatabase:query2( sql_statement, substitutions )
 
   end
 
-  local processed_sql_statement = s:gsub( '%%%((%a[%w_]*)%)([-0-9%.]*[cdeEfgGiouxXsq])', _format )
+  local processed_sql_statement = sql_statement:gsub( '%%%((%a[%w_]*)%)([-0-9%.]*[cdeEfgGiouxXQtn])', _format )
 
-  ngx.say( processed_sql_statement )
+  --ngx.say( processed_sql_statement )
 
-  wimbly.dd()
-
-
+  wimbly.dd( processed_sql_statement )
 
 end
 
 
-function MySQLDatabase:query( sql_statement )
+function MySQLDatabase:query( sql_statement, substitutions )
+
+  -- additional substitution types:
+  --   %(variable_name)Q - auto single-quote string with internal single-quotes doubled
+  --   %(variable_name)t - convert to 'YYYY-MM-DD HH:MM:SS' format
+  --   %(variable_name)n - validate as identifier
+
+  -- invalid substitution types:
+  --   %(variable_name)s - plain string substitutions are ripe for SQL-injection
+  --   %(variable_name)q - this context does not lend itself to requiring auto double-quoting of strings
+
+  local _format = function( key, fmt )
+
+	local value = substitutions[ key ]
+
+    if fmt == 'Q' then
+	  if type( value ) ~= 'string' then
+        error( "input:2: bad argument #2 to 'format' (string expected, got " .. type( value ) .. ")" )
+	  end
+
+	  value = value:gsub( "'", "''" )
+	  value = "'" .. value .. "'"
+	  substitutions[ key ] = value
+	  fmt = 's'
+
+	elseif fmt == 'n' then
+      if type( value ) ~= 'string' or value:match( '[^%w_%.]+' ) then
+        error( "input:2: bad argument #2 to 'format' (valid SQL identifier expected, got " .. type( value ) .. ")" )
+	  end
+      fmt = 's'
+	elseif fmt == 't' then
+      error( 'please implement :)' )
+	end
+
+	return substitutions[ key ] and ( '%' .. fmt ):format( substitutions[ key ] ) or '%(' .. key .. ')'.. fmt
+
+  end
+
+  local sql_statement = sql_statement:gsub( '%%%((%a[%w_]*)%)([-0-9%.]*[cdeEfgGiouxXQtn])', _format )
+
 
   ngx.log( ngx.DEBUG, "\n"..sql_statement )
   ngx.ctx.sql = sql_statement:gsub( '\n  ', ' ' ):gsub( '\n', ' ' )
+
 
   local db = ngx.ctx.mysql[ self.host..self.database..self.username ]
   if not db then
@@ -105,7 +142,6 @@ function MySQLDatabase:query( sql_statement )
   local res, err, errorcode, sqlstate = db:query( sql_statement )
 
   if err then
-	--error( err .. ' "' .. sql_statement .. '"' ) --inspect( { err = err, errorcode = errorcode, sqlstate = sqlstate, query = sql_statement } )  )
 	error( { err, sql_statement } )
   end
 
@@ -113,8 +149,8 @@ function MySQLDatabase:query( sql_statement )
 end
 
 
-function MySQLDatabase:value( sql_statement )
-  local result = self:result( sql_statement )
+function MySQLDatabase:value( sql_statement, substitutions )
+  local result = self:result( sql_statement, substitutions )
   if result then
     local key = next( result )
     local value = result[key]
@@ -128,9 +164,9 @@ function MySQLDatabase:value( sql_statement )
 end
 
 
-function MySQLDatabase:result( sql_statement )
+function MySQLDatabase:result( sql_statement, substitutions )
 
-  local res = self:resultset( sql_statement )
+  local res = self:resultset( sql_statement, substitutions )
   --ngx.say( inspect( res ) )
   if res and #res > 0 then
     return res[1]
@@ -141,9 +177,9 @@ function MySQLDatabase:result( sql_statement )
 end
 
 
-function MySQLDatabase:resultset( sql_statement )
+function MySQLDatabase:resultset( sql_statement, substitutions )
 
-  local res, err, errno, sqlstate = self:query( sql_statement )
+  local res, err, errno, sqlstate = self:query( sql_statement, substitutions )
 
   if res then
     for _, row in ipairs( res ) do
@@ -181,9 +217,9 @@ end
 
 
 
-function MySQLDatabase:indexedresultset( sql_statement, indexby )
+function MySQLDatabase:indexedresultset( indexby, sql_statement, substitutions )
 
-  local results = self:resultset( sql_statement )
+  local results = self:resultset( sql_statement, substitutions )
   local indexedresults = {}
 
   for _, row in ipairs( results ) do

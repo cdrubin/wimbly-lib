@@ -30,16 +30,22 @@ function TableModel.static:fromID( id )
   local object = self:new()
 
   -- load the data for this table object
-  local query = string.interpolate( [[
+
+  local row = object.db:result( [[
+
 SELECT
   *
 FROM
-  %(tablename)s
+  %(table_name)n
 WHERE
-  %(columnname)s = %(id)s
-]], { tablename = self.tableName, columnname = self.idColumn, id = id } )
+  %(column_name)n = %(id)d
 
-  local row = object.db:result( query )
+]], {
+  table_name = self.tableName,
+  column_name = self.idColumn,
+  id = id
+} )
+
 
   return object:_hydrate( row )
 end
