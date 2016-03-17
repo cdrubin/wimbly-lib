@@ -42,52 +42,6 @@ function MySQLDatabase.static:connect( connection_settings )
 end
 
 
-function MySQLDatabase:query2( sql_statement, substitutions )
-
-  -- additional substitution types:
-  --   %(variable_name)Q - auto single-quote string with internal single-quotes doubled
-  --   %(variable_name)t - convert to 'YYYY-MM-DD HH:MM:SS' format
-  --   %(variable_name)n - validate as identifier
-
-  -- invalid substitution types:
-  --   %(variable_name)s - plain string substitutions are ripe for SQL-injection
-  --   %(variable_name)q - this context does not lend itself to requiring auto double-quoting of strings
-
-  local _format = function( key, fmt )
-
-	local value = substitutions[ key ]
-
-    if fmt == 'Q' then
-	  if type( value ) ~= 'string' then
-        error( "input:2: bad argument #2 to 'format' (string expected, got " .. type( value ) .. ")" )
-	  end
-
-	  value = value:gsub( "'", "''" )
-	  value = "'" .. value .. "'"
-	  substitutions[ key ] = value
-	  fmt = 's'
-
-	elseif fmt == 'n' then
-      if type( value ) ~= 'string' or value:match( '[^%w_%.]+' ) then
-        error( "input:2: bad argument #2 to 'format' (valid SQL identifier expected, got " .. type( value ) .. ")" )
-	  end
-      fmt = 's'
-	elseif fmt == 't' then
-      error( 'please implement :)' )
-	end
-
-	return substitutions[ key ] and ( '%' .. fmt ):format( substitutions[ key ] ) or '%(' .. key .. ')'.. fmt
-
-  end
-
-  local processed_sql_statement = sql_statement:gsub( '%%%((%a[%w_]*)%)([-0-9%.]*[cdeEfgGiouxXQtn])', _format )
-
-  --ngx.say( processed_sql_statement )
-
-  wimbly.dd( processed_sql_statement )
-
-end
-
 
 function MySQLDatabase:query( sql_statement, substitutions )
 
@@ -100,34 +54,39 @@ function MySQLDatabase:query( sql_statement, substitutions )
   --   %(variable_name)s - plain string substitutions are ripe for SQL-injection
   --   %(variable_name)q - this context does not lend itself to requiring auto double-quoting of strings
 
-  local _format = function( key, fmt )
 
-	local value = substitutions[ key ]
+  if substitutions then
 
-    if fmt == 'Q' then
-	  if type( value ) ~= 'string' then
-        error( "input:2: bad argument #2 to 'format' (string expected, got " .. type( value ) .. ")" )
+    local _format = function( key, fmt )
+
+      local value = substitutions[ key ]
+
+	  if fmt == 'Q' then
+	    if type( value ) ~= 'string' then
+          error( "input:2: bad argument #2 to 'format' (string expected, got " .. type( value ) .. ")" )
+	    end
+
+        value = value:gsub( "'", "''" )
+        value = "'" .. value .. "'"
+        substitutions[ key ] = value
+        fmt = 's'
+
+      elseif fmt == 'n' then
+        if type( value ) ~= 'string' or value:match( '[^%w_%.]+' ) then
+          error( "input:2: bad argument #2 to 'format' (valid SQL identifier expected, got " .. type( value ) .. ")" )
+		end
+        fmt = 's'
+	  elseif fmt == 't' then
+        error( 'please implement :)' )
 	  end
 
-	  value = value:gsub( "'", "''" )
-	  value = "'" .. value .. "'"
-	  substitutions[ key ] = value
-	  fmt = 's'
+	  return substitutions[ key ] and ( '%' .. fmt ):format( substitutions[ key ] ) or '%(' .. key .. ')'.. fmt
 
-	elseif fmt == 'n' then
-      if type( value ) ~= 'string' or value:match( '[^%w_%.]+' ) then
-        error( "input:2: bad argument #2 to 'format' (valid SQL identifier expected, got " .. type( value ) .. ")" )
-	  end
-      fmt = 's'
-	elseif fmt == 't' then
-      error( 'please implement :)' )
-	end
+    end
 
-	return substitutions[ key ] and ( '%' .. fmt ):format( substitutions[ key ] ) or '%(' .. key .. ')'.. fmt
+    sql_statement = sql_statement:gsub( '%%%((%a[%w_]*)%)([-0-9%.]*[cdeEfgGiouxXQtn])', _format )
 
   end
-
-  local sql_statement = sql_statement:gsub( '%%%((%a[%w_]*)%)([-0-9%.]*[cdeEfgGiouxXQtn])', _format )
 
 
   ngx.log( ngx.DEBUG, "\n"..sql_statement )
