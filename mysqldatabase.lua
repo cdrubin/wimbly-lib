@@ -42,56 +42,50 @@ function MySQLDatabase.static:connect( connection_settings )
 end
 
 
-function MySQLDatabase:prepared_query( sql_statement, substitutions )
+function MySQLDatabase:query2( sql_statement, substitutions )
 
-  -- convert all ?[name] values into '?' for a valid SQL prepared statement,
-  local clean_sql_statement
-  --local substitution_matches =
+  -- valid substitution types:
+  --   %(variable_name)Q - auto single-quote string with internal single-quotes doubled
+  --   %(variable_name)t - convert to 'YYYY-MM-DD HH:MM:SS' format
+  --   %(variable_name)n - validate as identifier
 
-  -- find all the :names and verify that they appear after WHERE in the statement?
+
+  --function string.interpolate( s, tab )
+    --local _format = function(k, fmt)
+      --return tab[k] and ("%"..fmt):format( tab[k] ) or '%('..k..')'..fmt
+    --end
+
+    --return ( s:gsub( '%%%((%a[%w_]*)%)([-0-9%.]*[cdeEfgGiouxXsq])', _format ) )
+  --end
 
 
-  --wimbly.dd( sql_statement )
+  local _format = function( key, fmt )
 
-  --[[
-  for named_substitution in sql_statement:gmatch( ':([%w_]-)' ) do
-	ngx.say( '-' .. named_substitution .. '-' )
+	local value = substitutions[ key ]
+
+    if fmt == 'Q' then
+	  value = value:gsub( "'", "''" )
+	  value = "'" .. value .. "'"
+	  substitutions[ key ] = value
+	  fmt = 's'
+	elseif fmt == 'n' then
+      if value:match( '[^%w_%.]+' ) then
+        error( "input:2: bad argument #2 to 'format' (identifier expected, got " .. type( value ) .. ")" )
+	  end
+      fmt = 's'
+	elseif fmt == 't' then
+      error( 'please implement :)' )
+	end
+
+	return substitutions[ key ] and ( '%' .. fmt ):format( substitutions[ key ] ) or '%(' .. key .. ')'.. fmt
+
   end
-  --]]
 
+  local processed_sql_statement = s:gsub( '%%%((%a[%w_]*)%)([-0-9%.]*[cdeEfgGiouxXsq])', _format )
 
-  --local it = [[ Hey there ]]
-  --it:gsub( ' ', '_' )
+  ngx.say( processed_sql_statement )
 
   wimbly.dd()
-
-  local insertion_points = {}
-  for name, _ in pairs( substitutions ) do
-    insertion_points[name] = '?'
-  end
-
-  --wimbly.dd( insertion_points )
-
-  local prepare_statement = string.interpolate( sql_statement, insertion_points )
-
-  --wimbly.dd( prepare_statement )
-
-  self:query( "PREPARE ps1 FROM '" .. prepare_statement .. "'" )
-  -- ordered in the same way as the occurrence of substitutions
-
-  -- save prepared statedment in local store of ones that have been sent
-  -- send prepared statement
-
-  --[[
-	mysql> PREPARE stmt1 FROM 'SELECT SQRT(POW(?,2) + POW(?,2)) AS hypotenuse';
-	mysql> SET @a = 3;
-	mysql> SET @b = 4;
-	mysql> EXECUTE stmt1 USING @a, @b;
-  --]]
-
-  -- send sets
-
-
 
 
 
