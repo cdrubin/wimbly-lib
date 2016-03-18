@@ -68,52 +68,78 @@ function SQL:FROM( tables )
 end
 
 
-function SQL:WHERE( conditions ) return SQL.AND_WHERE( self, conditions ) end
-function SQL:AND( conditions ) return SQL.AND_WHERE( self, conditions ) end
-function SQL:AND_WHERE( conditions )
+function SQL:WHERE( conditions )
 
-  for _, clause in ipairs( conditions ) do
+  --local conjunction = 'AND'
 
-    if type( clause ) == 'table' then
+  -- AND is default but if OR is specified then it is used
+  --if conditions['OR'] then conjunction = 'OR' end
 
-      name, relation, value = unpack( clause )
+  local _recurse_where
+  _recurse_where = function ( wheres )
 
-      if name:match( '[^%w_%.]+' ) then
-        error( "name may contain alphanumeric characters with underscores. '" .. name .. "' invalid." )
+    print( '...entry...' )
+
+    local conjunction = 'AND'
+    if wheres['OR'] then conjunction = 'OR' end
+
+	local where_level = {}
+	where_level['conjunction'] = conjunction
+
+    for index, clause in ipairs( wheres ) do
+
+	  print ( index)
+	  if type( clause ) == 'string' then
+	    print( index .. ':'.. clause )
 	  end
 
-      if relation:match( '[^<>=]+' ) then
-        error( "relation may be '<', '>', '='. '" .. relation .. "' invalid." )
-      end
+      local name, relation, value = unpack( clause )
 
-      if type( value ) == 'string' then
-        -- 'escape' quotes in value
-        value = value:gsub( "'", "''" )
-        value = "'" .. value .. "'"
-      end
+	  -- if first item is a table recurse
+	  if type( name ) == 'table' then
+        table.insert( where_level, _recurse_where( clause ) )
 
-	  table.insert( self.conditions, { name .. ' ' .. relation .. ' ' .. value, 'AND' } )
+	  else
+		if name:match( '[^%w_%.]+' ) then
+		  error( "name may contain alphanumeric characters with underscores. '" .. name .. "' invalid." )
+		end
 
-	elseif type( clause ) == 'string' then
+		if relation:match( '[^<>=]+' ) then
+		  error( "relation may be '<', '>', '='. '" .. relation .. "' invalid." )
+		end
 
-	  table.insert( self.conditions, { clause, 'AND' } )
+		if type( value ) == 'string' then
+		  -- 'escape' quotes in value
+		  value = value:gsub( "'", "''" )
+		  value = "'" .. value .. "'"
+		end
 
-	end
+		table.insert( where_level, { name, relation, value } )
+
+	  end
+
+    end
+
+	print( '>>>>' .. where_level['conjunction'] )
+
+	return where_level
 
   end
 
+  if self.conditions == nil then
+    self.conditions = _recurse_where( conditions )
+  else
+    -- table merge if conjunction same or error!
+  end
+  --table.insert( self.conditions, _recurse_where( conditions ) )
+
+  inspect = require( 'inspect' )
+  print( inspect( self.conditions ) )
 
   return self
 
 end
 
-function SQL:OR( conditions ) return SQL.OR_WHERE( self, conditions ) end
-function SQL:OR_WHERE( conditions )
-
-
-
-  return ''
-end
 
 function SQL:IN( name, values )
   return self
@@ -149,14 +175,33 @@ function SQL:statement()
 
   statement = statement:sub( 1, -2 ) .. "\nWHERE"
 
+  local _recurse_conditions
+  _recurse_conditions = function( conditions, indent )
 
-  for _, condition in ipairs( self.conditions ) do
-    name, relation, value = unpack( condition )
+    local where_statement = ''
+	local conjunction = conditions['conjunction']
 
-	statement = statement .. "\n  " .. name .. ' ' .. relation .. ' ' .. value .. ' AND'
+	print( '____' .. conjunction )
+
+	for _, condition in ipairs( conditions ) do
+
+	  local name, relation, value = unpack( condition )
+
+	  if type( name ) == 'table' then
+	    where_statement = where_statement .. _recurse_conditions( condition, indent + 2 )
+
+	  else
+
+	    where_statement = where_statement .. "\n  " ..(' '):rep( indent ) .. name .. ' ' .. relation .. ' ' .. value .. ' ' .. conjunction
+	  end
+	end
+
+    return where_statement:sub( 1, -conjunction:len() - 1 )
   end
 
-  return statement:sub( 1, -4 )
+  statement = statement .. _recurse_conditions( self.conditions, 0 )
+
+  return statement
 end
 
 
@@ -178,13 +223,13 @@ query = SQL
 	{ 'lastname', '>=', "Davidson's" },
 	{
 	  OR = true,  -- <=== override
-  	  { '1', '=', 1 },
-	  { '2', '=', 2 }
+	  { '1one', '=', 1 },
+	  { '2two', '=', 2 }
 	},
 	{
 	  OR = true,
-  	  { '1', '=', 1 },
-	  { '2', '=', 2 }
+	  { '1..', '=', 1 },
+	  { '2..', '=', 2 }
 	}
   }
   :IN {
@@ -194,6 +239,9 @@ query = SQL
 	'email', { 7, 8 }
   }
   --]]
+
+local inspect = require( 'inspect' )
+
 print( query )
 
 -- return SQL
