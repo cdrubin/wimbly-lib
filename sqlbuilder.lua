@@ -3,11 +3,6 @@ class = require 'middleclass'
 
 local SQL = class( 'SQL' )
 
-function SQL:__tostring()
-  -- call statement or vice-versa
-  return SQL:statement()
-end
-
 SQL.verb = ''
 SQL.columns = {}
 SQL.tables = {}
@@ -34,8 +29,6 @@ end
 function SQL:SELECT( columns )
 
   for alias, name in pairs( columns ) do
-    --print( '-n-' .. type( name ) )
-	--print( '+a+' .. type( alias ) )
 
 	if name:match( '[^%w_]+' ) then
       error( "name may contain alphanumeric characters with underscores. '" .. name .. "' invalid." )
@@ -70,34 +63,23 @@ end
 
 function SQL:WHERE( conditions )
 
-  --local conjunction = 'AND'
-
-  -- AND is default but if OR is specified then it is used
-  --if conditions['OR'] then conjunction = 'OR' end
-
   local _recurse_where
   _recurse_where = function ( wheres )
 
-    print( '...entry...' )
-
     local conjunction = 'AND'
+    -- AND is default but if OR is specified then it is used
     if wheres['OR'] then conjunction = 'OR' end
 
-	local where_level = {}
-	where_level['conjunction'] = conjunction
+	local where_level_conditions = {}
+	where_level_conditions['conjunction'] = conjunction
 
     for index, clause in ipairs( wheres ) do
-
-	  print ( index)
-	  if type( clause ) == 'string' then
-	    print( index .. ':'.. clause )
-	  end
 
       local name, relation, value = unpack( clause )
 
 	  -- if first item is a table recurse
 	  if type( name ) == 'table' then
-        table.insert( where_level, _recurse_where( clause ) )
+        table.insert( where_level_conditions, _recurse_where( clause ) )
 
 	  else
 		if name:match( '[^%w_%.]+' ) then
@@ -114,27 +96,25 @@ function SQL:WHERE( conditions )
 		  value = "'" .. value .. "'"
 		end
 
-		table.insert( where_level, { name, relation, value } )
+		table.insert( where_level_conditions, { name, relation, value } )
 
 	  end
 
     end
 
-	print( '>>>>' .. where_level['conjunction'] )
-
-	return where_level
+	return where_level_conditions
 
   end
 
-  if self.conditions == nil then
-    self.conditions = _recurse_where( conditions )
+  if #self.conditions == 0 then
+	self.conditions = _recurse_where( conditions )
+    --table.insert( self.conditions, where_conditions )
   else
+
     -- table merge if conjunction same or error!
   end
   --table.insert( self.conditions, _recurse_where( conditions ) )
 
-  inspect = require( 'inspect' )
-  print( inspect( self.conditions ) )
 
   return self
 
@@ -151,7 +131,9 @@ function SQL:NOT_IN( name, values )
 end
 
 
+function SQL:__tostring() return SQL.statement( self ) end
 function SQL:statement()
+
   local statement = "SELECT"
 
   for alias, name in pairs( self.columns ) do
@@ -181,18 +163,15 @@ function SQL:statement()
     local where_statement = ''
 	local conjunction = conditions['conjunction']
 
-	print( '____' .. conjunction )
-
 	for _, condition in ipairs( conditions ) do
 
 	  local name, relation, value = unpack( condition )
 
 	  if type( name ) == 'table' then
-	    where_statement = where_statement .. _recurse_conditions( condition, indent + 2 )
-
+		where_statement = where_statement .. ' (' .. _recurse_conditions( condition, indent + 2 )
+		  .. "\n" .. (' '):rep( indent + 2) .. ') ' .. conjunction
 	  else
-
-	    where_statement = where_statement .. "\n  " ..(' '):rep( indent ) .. name .. ' ' .. relation .. ' ' .. value .. ' ' .. conjunction
+	    where_statement = where_statement .. "\n  " .. (' '):rep( indent ) .. name .. ' ' .. relation .. ' ' .. value .. ' ' .. conjunction
 	  end
 	end
 
@@ -229,8 +208,13 @@ query = SQL
 	{
 	  OR = true,
 	  { '1..', '=', 1 },
-	  { '2..', '=', 2 }
-	}
+	  { '2..', '=', 2 },
+	  {
+	    { 'fgh', '>', 7},
+		{ 'kjh', '<=', 12 }
+	  }
+	},
+	{ 'shoe', '=', 'fits' }
   }
   :IN {
 	'email', { 1, 2, 3, 4, 5 }
