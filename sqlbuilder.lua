@@ -106,7 +106,6 @@ function SQL:OR_WHERE( conditions )
 end
 
 
-
 function SQL:WHERE( conditions )
 
   if type( conditions ) == 'table' and type ( conditions[1] ) == 'string' then
@@ -132,15 +131,8 @@ function SQL:WHERE( conditions )
 
 	  else
 	    name = SQL:validate_and_quote_name( name )
-    	--	if name:match( '[^%w_%.]+' ) then
-		 -- error( "name may contain alphanumeric characters with underscores. '" .. name .. "' invalid." )
-		--end
 
 		relation = SQL:validate_and_upcase_relation( relation )
-
-		--if relation:match( '[^<>=]+' ) and relation:upper() ~= 'IN' and relation:upper() ~= 'NOT IN' and relation:upper() ~= 'IS' then
-		  --error( "relation may be '<', '>', '=', 'IN', 'NOT IN', 'IS'. '" .. relation .. "' invalid." )
-		--end
 
 		if type( value ) == 'string' then
 		  if relation == 'IS' then
@@ -152,8 +144,10 @@ function SQL:WHERE( conditions )
 		  else
 		    value = SQL:single_quote_and_escape_value( value )
 		  end
+
 		elseif type( value ) == 'boolean' then
 		  if value then value = 'TRUE' else value = 'FALSE' end
+
 		elseif type( value ) == 'table' and ( relation == 'IN' or relation == 'NOT IN' ) then
           local new_value = '( '
 		  for _, val in ipairs( value ) do
@@ -165,6 +159,7 @@ function SQL:WHERE( conditions )
 			new_value = new_value .. val .. ', '
 		  end
 		  value = new_value:sub( 1, -3 ) .. ' )'
+
 		end
 
 		table.insert( where_level_conditions, { name, relation, value } )
@@ -182,10 +177,10 @@ function SQL:WHERE( conditions )
 	self.conditions = _recurse_where( conditions )
   else
 
-    if conditions['conjunction'] == self.conditions['conjunction'] then
+    if ( conditions['OR'] and self.conditions['conjunction'] == 'OR' ) or
+	  ( conditions['AND'] and self.conditions['conjunction'] == 'AND' ) then
       local more_conditions = _recurse_where( conditions )
 
-	  print( inspect( more_conditions ) )
 	  for _, condition in ipairs( more_conditions ) do
 	    table.insert( self.conditions, condition )
 	  end
@@ -255,7 +250,12 @@ function SQL:statement()
 end
 
 
---return SQL
+return SQL
+
+--[=[
+
+Example usage:
+
 query = SQL
   :SELECT {
     ['id'] = 'u_id',
@@ -301,8 +301,6 @@ query = SQL
   }
   --]]
 
-inspect = require( 'inspect' )
-
 print( query )
 
 query:OR_WHERE{
@@ -314,8 +312,7 @@ query:OR_WHERE{
   { 'eee', 'IS', 'NULL' }
 }
 
-
 print( query )
 
--- return SQL
 
+--]=]
