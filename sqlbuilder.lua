@@ -3,26 +3,56 @@ class = require 'middleclass'
 
 local SQL = class( 'SQL' )
 
+
 SQL.verb = ''
 SQL.columns = {}
 SQL.tables = {}
 SQL.conditions = {}
+SQL.options = { name_quote = '`' }
 
 
-function SQL:initialize( verb )
+function SQL:initialize( verb, options )
   self.verb = verb
 end
 
 
-function SQL.static:SELECT( columns )
-  return SQL:new( 'select' ):SELECT( columns )
+function SQL.static:SELECT( columns, options )
+  return SQL:new( 'SELECT', options ):SELECT( columns )
 end
 
 
-function SQL.static:validate_and_transform_name( name )
-  if name:match( '[^%w_]+' ) then
+function SQL.static:UPDATE( columns, options )
+  return SQL:new( 'UPDATE', options ):SELECT( columns )
+end
+
+
+function SQL.static:DELETE( columns, options )
+  return SQL:new( 'DELETE', options ):SELECT( columns )
+end
+
+
+function SQL.static:validate_and_quote_name( name )
+  if name:match( '[^%w_%.]+' ) then
     error( "name may contain alphanumeric characters with underscores. '" .. name .. "' invalid." )
   end
+  return self.options.name_quote .. name .. self.options.name_quote
+end
+
+
+function SQL.static:validate_and_upcase_relation( relation )
+  if relation:match( '[^<>=]+' ) and relation:upper() ~= 'IN' and relation:upper() ~= 'NOT IN' and relation:upper() ~= 'IS' then
+    error( "relation may be '<', '>', '=', 'IN', 'NOT IN', 'IS'. '" .. relation .. "' invalid." )
+  end
+
+  return relation:upper()
+end
+
+
+function SQL.static:single_quote_and_escape_value( value )
+  if type( value ) == 'string' then
+    value = "'" .. value:gsub( "'", "''" ) .. "'"
+  end
+  return value
 end
 
 
@@ -30,16 +60,12 @@ function SQL:SELECT( columns )
 
   for alias, name in pairs( columns ) do
 
-	if name:match( '[^%w_]+' ) then
-      error( "name may contain alphanumeric characters with underscores. '" .. name .. "' invalid." )
-	end
+    name = SQL:validate_and_quote_name( name )
 
 	if type( alias ) == 'number' then
 	  alias = name
 	else
-	  if alias:match( '[^%w_]+' ) then
-        error( "alias may contain alphanumeric characters with underscores. '" .. alias .. "' invalid." )
-	  end
+	  alias = SQL:validate_and_quote_name( alias )
 	end
 
 	self.columns[alias] = name
@@ -52,7 +78,14 @@ end
 function SQL:FROM( tables )
 
   for alias, name in pairs( tables ) do
-    if type( alias ) == 'number' then alias = name end
+
+	name = SQL:validate_and_quote_name( name )
+
+	if type( alias ) == 'number' then
+	  alias = name
+	else
+	  alias = SQL:validate_and_quote_name( alias )
+	end
 	self.tables[alias] = name
   end
 
@@ -61,7 +94,24 @@ function SQL:FROM( tables )
 end
 
 
+function SQL:OR_WHERE( conditions )
+
+  if type( conditions ) == 'table' and type ( conditions[1] ) == 'string' then
+    conditions = { OR = true, conditions }
+  else
+    conditions['OR'] = true
+  end
+
+  return SQL.WHERE( self, conditions )
+end
+
+
+
 function SQL:WHERE( conditions )
+
+  if type( conditions ) == 'table' and type ( conditions[1] ) == 'string' then
+    conditions = { ['conjunction'] = 'AND', conditions }
+  end
 
   local _recurse_where
   _recurse_where = function ( wheres )
@@ -70,8 +120,7 @@ function SQL:WHERE( conditions )
     -- AND is default but if OR is specified then it is used
     if wheres['OR'] then conjunction = 'OR' end
 
-	local where_level_conditions = {}
-	where_level_conditions['conjunction'] = conjunction
+	local where_level_conditions = { ['conjunction'] = conjunction }
 
     for index, clause in ipairs( wheres ) do
 
@@ -82,18 +131,40 @@ function SQL:WHERE( conditions )
         table.insert( where_level_conditions, _recurse_where( clause ) )
 
 	  else
-		if name:match( '[^%w_%.]+' ) then
-		  error( "name may contain alphanumeric characters with underscores. '" .. name .. "' invalid." )
-		end
+	    name = SQL:validate_and_quote_name( name )
+    	--	if name:match( '[^%w_%.]+' ) then
+		 -- error( "name may contain alphanumeric characters with underscores. '" .. name .. "' invalid." )
+		--end
 
-		if relation:match( '[^<>=]+' ) then
-		  error( "relation may be '<', '>', '='. '" .. relation .. "' invalid." )
-		end
+		relation = SQL:validate_and_upcase_relation( relation )
+
+		--if relation:match( '[^<>=]+' ) and relation:upper() ~= 'IN' and relation:upper() ~= 'NOT IN' and relation:upper() ~= 'IS' then
+		  --error( "relation may be '<', '>', '=', 'IN', 'NOT IN', 'IS'. '" .. relation .. "' invalid." )
+		--end
 
 		if type( value ) == 'string' then
-		  -- 'escape' quotes in value
-		  value = value:gsub( "'", "''" )
-		  value = "'" .. value .. "'"
+		  if relation == 'IS' then
+			if value:upper() == 'NULL' or value:upper() == 'NOT NULL' then
+			  value = value:upper()
+			else
+		      error( "value may be 'NULL', 'NOT NULL'. '" .. value .. "' invalid." )
+			end
+		  else
+		    value = SQL:single_quote_and_escape_value( value )
+		  end
+		elseif type( value ) == 'boolean' then
+		  if value then value = 'TRUE' else value = 'FALSE' end
+		elseif type( value ) == 'table' and ( relation == 'IN' or relation == 'NOT IN' ) then
+          local new_value = '( '
+		  for _, val in ipairs( value ) do
+		    if type( val ) == 'string' then
+			  val = SQL:single_quote_and_escape_value( val )
+			elseif type( val ) == 'boolean' then
+		      if val then val = 'TRUE' else val = 'FALSE' end
+			end
+			new_value = new_value .. val .. ', '
+		  end
+		  value = new_value:sub( 1, -3 ) .. ' )'
 		end
 
 		table.insert( where_level_conditions, { name, relation, value } )
@@ -106,28 +177,28 @@ function SQL:WHERE( conditions )
 
   end
 
+  -- determine how yo merge conditions with existing ones
   if #self.conditions == 0 then
 	self.conditions = _recurse_where( conditions )
-    --table.insert( self.conditions, where_conditions )
   else
 
-    -- table merge if conjunction same or error!
+    if conditions['conjunction'] == self.conditions['conjunction'] then
+      local more_conditions = _recurse_where( conditions )
+
+	  print( inspect( more_conditions ) )
+	  for _, condition in ipairs( more_conditions ) do
+	    table.insert( self.conditions, condition )
+	  end
+	else
+	  local previous_conditions = self.conditions
+	  self.conditions = _recurse_where( conditions )
+	  table.insert( self.conditions, previous_conditions )
+	end
   end
-  --table.insert( self.conditions, _recurse_where( conditions ) )
 
 
   return self
 
-end
-
-
-function SQL:IN( name, values )
-  return self
-end
-
-
-function SQL:NOT_IN( name, values )
-  return self
 end
 
 
@@ -199,6 +270,12 @@ query = SQL
   :WHERE{
     AND = true,   -- <=== default
 	{ 'u.id', '=', 12 },
+	{ 'train', '=', 'due' },
+	{ 'sheep', 'IN', { 9, 78, 78, 90 } },
+	{ 'cows', 'NOT IN', { 'coats', 'pyjamas' } },
+	{ 'beep', 'IS', 'NULL' }
+  }
+  --[[
 	{ 'lastname', '>=', "Davidson's" },
 	{
 	  OR = true,  -- <=== override
@@ -224,7 +301,19 @@ query = SQL
   }
   --]]
 
-local inspect = require( 'inspect' )
+inspect = require( 'inspect' )
+
+print( query )
+
+query:OR_WHERE{
+  { 'book', '=', 7 },
+  { 'goons', '=', 'everywhere' }
+}
+
+query:OR_WHERE{
+  { 'eee', 'IS', 'NULL' }
+}
+
 
 print( query )
 
