@@ -2,8 +2,8 @@
 local GoogleAPI = require( 'lib/googleapi' )
 local GoogleDrive = class( 'GoogleDrive', GoogleAPI )
 
-GoogleDrive.static.refresh_token = '1/MY8I8Wh_dnSTsA-DrovzuuO0FPdeyVOYjhgLqhTQ4mU'
-GoogleDrive.static.resources_folderid = '0ByeScxUIdhQNdC1oTC1zaWltQVU'
+GoogleDrive.static.refresh_token = '[]'
+GoogleDrive.static.resources_folderid = '[]'
 --GoogleDrive.static.cache_seconds = 86400
 GoogleDrive.static.cache_seconds = 3600
 

@@ -3,10 +3,10 @@
 local GoogleAPI = class( 'GoogleAPI' )
 
 
-GoogleAPI.static.clientid = '1056994160959-f5r4airrcpd1si5bodp4v0daer3qlbkn.apps.googleusercontent.com'
-GoogleAPI.static.clientemail = '1056994160959-f5r4airrcpd1si5bodp4v0daer3qlbkn@developer.gserviceaccount.com'
-GoogleAPI.static.clientsecret = 'vRhz_2V79ee1nrOdFmtZV_cm'
-GoogleAPI.static.redirecturi = 'http://connect.readingandwritingproject.com/housekeeping/googleoauthcallback';
+GoogleAPI.static.clientid = '[]'
+GoogleAPI.static.clientemail = '[]'
+GoogleAPI.static.clientsecret = '[]'
+GoogleAPI.static.redirecturi = '[]';
 
 
 -- docadmin@readingandwritingproject.com
@@ -15,8 +15,8 @@ GoogleAPI.static.redirecturi = 'http://connect.readingandwritingproject.com/hous
 
 -- client login uses an email and password to get access to old APIs
 function GoogleAPI.static.clientlogin( service, email, password )
-  local email = email or 'shared@readingandwritingproject.com'
-  local password = password or 'tcrwp2010'
+  local email = email or '[]'
+  local password = password or '[]'
 
   local args = {
     Email = email,
