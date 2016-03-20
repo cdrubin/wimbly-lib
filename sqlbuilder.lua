@@ -4,7 +4,6 @@ class = require 'middleclass'
 inspect = require 'inspect'
 
 
-
 local SQL = class( 'SQL' )
 
 
@@ -403,7 +402,8 @@ local query = SQL
     ['id'] = 'u_id',
     ['firstname'] = 'u_firstname',
     ['lastname'] = 'u_lastname',
-	'u_email'
+	'u_email',
+    'age',
   }
   :FROM {
     ['u'] = 'user',
