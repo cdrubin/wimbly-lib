@@ -301,7 +301,7 @@ end
 --]]
 
 function validate.mapping( values, mapping, options, name_so_far )
-  local options = options or { ignore_required = false, ignore_readonly = false, report_unknown = false, zero_based_indexing = false }
+  local options = options or { ignore_required = false, ignore_readonly = false, ignore_nonempty = false, report_unknown = false, zero_based_indexing = false }
   local name_so_far = ( name_so_far or '' )
   local errors = {}
 
@@ -410,8 +410,13 @@ function validate.mapping( values, mapping, options, name_so_far )
   else
 
     if values ~= nil then
+
       if mapping.readonly and not options.ignore_readonly then
         table.insert( errors, { name = name_so_far, message = "value supplied for field marked readonly" } )
+
+      elseif mapping.nonempty and not options.ignore_nonempty and values == '' then
+        table.insert( errors, { name = name_so_far, message = "empty value supplied for field marked nonempty" } )
+
 
       -- actually validate the data
       else
