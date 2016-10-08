@@ -227,13 +227,6 @@ function wimbly.wrap( content, file, location, linenumber, options )
     if type( message ) == 'string' then
       offset, error_message = message:match( '%]:(%d+): (.*)$' )
 
-      ngx.say( 'offset:' )
-      ngx.say( offset )
-    ngx.exit( ngx.OK )
-
-      ngx.say( 'error_message:' )
-      ngx.say( error_message )
-
       if not error_message then
         error_message = inspect( message )
       end
