@@ -270,8 +270,12 @@ function BaseModel.static:insert( setup, options )
   if not options.skip_validation then
     local valid, errors = validate.for_creation( setup, self.fieldMapping )
 
+    --ngx.say( inspect( errors ) )
+
+    --ngx.say( inspect( errors ) )
+
     if not valid then
-      error( errors[1].message, 2 )
+      error( errors, 2 )
     end
   end
 

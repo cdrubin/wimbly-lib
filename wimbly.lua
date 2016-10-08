@@ -223,22 +223,26 @@ function wimbly.wrap( content, file, location, linenumber, options )
 
     local offset, error_message
 
+
     if type( message ) == 'string' then
       offset, error_message = message:match( '%]:(%d+): (.*)$' )
+
+      ngx.say( 'offset:' )
+      ngx.say( offset )
+    ngx.exit( ngx.OK )
+
+      ngx.say( 'error_message:' )
+      ngx.say( error_message )
+
       if not error_message then
         error_message = inspect( message )
       end
-    elseif type( message ) == 'table' then
-	  -- passed a table by exception
-	  error_message = '[not used]'
-	  options.override_message = table.concat( message, "\n\n" )
+
     else
       result.callstack = {}
       options.hide_extract = true
       options.override_message = inspect( result.message )
-      --ngx.say( inspect( resmessage ) )
     end
-
 
     if offset then
       offset = tonumber( offset )
@@ -250,12 +254,19 @@ function wimbly.wrap( content, file, location, linenumber, options )
     local extract = ''
 
     if #result.callstack > 3 then
+
       -- add line number from level 2
       file = file..':'..result.callstack[#result.callstack - 2].line
       for i = #result.callstack - 3, 1, -1 do
         file = file..'\n'..( ' ' ):rep( ( #result.callstack - i ) * 2 -1 )..result.callstack[i].file..':'..result.callstack[i].line
       end
-      error_message = error_message:match( ':%d+:%s(.*)$' )
+
+      ngx.say( error_message )
+      error_message_part = error_message:match( ':%d+:%s(.*)$' )
+      if error_message_part then error_message = error_message_part end
+
+      ngx.say( error_message )
+
       extract = wimbly._source_extract( result.callstack[1].file, result.callstack[1].line, { indent = 1 } )
     else
       file = file..':'..offset + linenumber
