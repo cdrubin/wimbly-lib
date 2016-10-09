@@ -56,7 +56,7 @@ function TableModel:_insert()
   local database_table = self.class.tableName
   local result, err, errcode, sqlstate = self.db:insert( database_table, table.dotget( self, 'rows' ) )
   if result and result.affected_rows == 1 then
-    table.dotset( self, 'rows.id', result.insert_id )
+    table.dotset( self, 'rows.'..self.class.idColumn, result.insert_id )
   else
     error( err )
   end
@@ -75,8 +75,8 @@ end
 function TableModel:_delete()
 
   local database_table = self.class.tableName
-  if table.dotget( self, 'rows.id' ) then
-    local result, err, errcode, sqlstate = self.db:delete( database_table, table.dotget( self, 'rows.id' ) )
+  if table.dotget( self, 'rows.'..self.class.idColum ) then
+    local result, err, errcode, sqlstate = self.db:delete( database_table, table.dotget( self, 'rows.'..self.class.idColumn ) )
 
     if result and result.affected_rows == 1 then
       self = nil
@@ -85,7 +85,7 @@ function TableModel:_delete()
     end
 
   else
-    error( 'default implementation relies on id field in object data', 2 )
+    error( 'default implementation relies on '..self.class.idColumn..' field in object data', 2 )
   end
 
 end
