@@ -9,10 +9,6 @@ GoogleAPI.static.clientsecret = '[]'
 GoogleAPI.static.redirecturi = '[]';
 
 
--- docadmin@readingandwritingproject.com
--- D0csad1M
-
-
 -- client login uses an email and password to get access to old APIs
 function GoogleAPI.static.clientlogin( service, email, password )
   local email = email or '[]'
