@@ -4,7 +4,7 @@ local GoogleAdmin = class( 'GoogleAdmin', GoogleAPI )
 -- used the housekeeping helper pages to generate the refresh token
 -- scopes required :
 --   https://www.googleapis.com/auth/admin.directory.group
-GoogleAdmin.static.refresh_token = '1/Jra0-Iy8tplAo4uG0q-axb_MuqSrrYTZJhFgE_CXwlA'
+GoogleAdmin.static.refresh_token = 'XXXX'
 
 -- use https://developers.google.com/admin-sdk/
 function GoogleAdmin.static.groupMembership( groupemail )
