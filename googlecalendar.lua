@@ -2,15 +2,13 @@
 local GoogleAPI = require( 'lib/googleapi' )
 local GoogleCalendar = class( 'GoogleCalendar', GoogleAPI )
 
-GoogleCalendar.static.refresh_token = '1/ZbyHsMuvCH0_zZ4CC7bYFYQN3_gXTbMUBFT0uedR89Y'
+GoogleCalendar.static.refresh_token = 'YYYY'
 
 -- used the housekeeping helper pages to generate the refresh token
 -- scopes required :
 --   https://www.googleapis.com/auth/calendar
 
--- relevant user:
---   staff-developer-calendars@readingandwritingproject.com
---   tcrwp20xx
+
 
 
 function GoogleCalendar.static:list()
