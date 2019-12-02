@@ -6,7 +6,7 @@ local GoogleSpreadsheet = class( 'GoogleSpreadsheet', GoogleAPI )
 -- scopes required :
 --   https://spreadsheets.google.com/feeds
 --   https://docs.google.com/feeds
-GoogleSpreadsheet.static.refresh_token = '1/BF2G_V-O_tF0nSVlbIbf98COhkrTUeCE0LH8eR8mrhM'
+GoogleSpreadsheet.static.refresh_token = 'ZZZZZ'
 GoogleSpreadsheet.static.api_proxy = '/proxy/googlespreadsheets'
 
 GoogleSpreadsheet.key = nil
