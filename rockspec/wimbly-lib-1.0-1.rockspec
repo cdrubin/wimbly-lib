@@ -8,7 +8,7 @@ source = {
 
 description = {
   summary = "Convenience code from the wimbly project.",
-  detailed = "Convenience code from the wimbly project.,
+  detailed = "Convenience code from the wimbly project.",
   homepage = "http://...", -- We don't have one yet,
   license = "MIT"
 }
