@@ -7,8 +7,8 @@ source = {
 }
 
 description = {
-  summary = "Plain static-site generator using templet.",
-  detailed = "Plain static-site generator using templet.",
+  summary = "Convenience code from the wimbly project.",
+  detailed = "Convenience code from the wimbly project.,
   homepage = "http://...", -- We don't have one yet,
   license = "MIT"
 }
