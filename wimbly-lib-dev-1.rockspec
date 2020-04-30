@@ -1,15 +1,14 @@
 package = "wimbly-lib"
-version = "1.0-1"
+version = "dev-1"
 
 source = {
-   url = "git://github.com/cdrubin/wimbly-lib",
-   tag = "1.0-1"
+   url = "git://github.com/cdrubin/wimbly-lib"
 }
 
 description = {
   summary = "Convenience code from the wimbly project.",
   detailed = "Convenience code from the wimbly project.",
-  homepage = "http://...", -- We don't have one yet,
+  homepage = "http://github.com/cdrubin/wimbly-lib",
   license = "MIT"
 }
   
@@ -18,5 +17,9 @@ dependencies = {
 }
   
 build = {
-  type = "none"
+  type = "builtin",
+  modules = {
+    ["wimbly-lib.util"] = "util.lua",
+    ["wimbly-lib.wimbly"] = "wimbly.lua"
+  }
 }
